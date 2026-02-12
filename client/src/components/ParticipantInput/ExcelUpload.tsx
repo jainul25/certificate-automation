@@ -50,6 +50,7 @@ export default function ExcelUpload() {
         for (let i = startIndex; i < jsonData.length; i++) {
           const row = jsonData[i]
           const name = row?.[0]
+          const email = row?.[1] // Second column (Column B)
 
           if (!name || String(name).trim().length === 0) {
             if (row && row.length > 0) {
@@ -77,10 +78,25 @@ export default function ExcelUpload() {
             continue
           }
 
+          // Parse and validate email if provided
+          let participantEmail: string | undefined
+          if (email && typeof email === 'string') {
+            const trimmedEmail = String(email).trim()
+            if (trimmedEmail) {
+              participantEmail = trimmedEmail
+              // Basic email validation
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+              if (!emailRegex.test(trimmedEmail)) {
+                errors.push(`Row ${i + 1}: Invalid email "${trimmedEmail}"`)
+              }
+            }
+          }
+
           existingNames.add(trimmedName.toLowerCase())
           newParticipants.push({
             id: uuidv4(),
             name: trimmedName,
+            email: participantEmail,
             status: 'pending' as const,
           })
         }
@@ -166,8 +182,9 @@ export default function ExcelUpload() {
         <h4 className="font-medium text-blue-800 mb-2">Expected Format</h4>
         <ul className="text-sm text-blue-700 space-y-1">
           <li>• Names should be in the first column (Column A)</li>
+          <li>• Email addresses in the second column (Column B) - optional</li>
           <li>• First row can be a header (it will be skipped if detected)</li>
-          <li>• One name per row</li>
+          <li>• One participant per row</li>
         </ul>
       </div>
 

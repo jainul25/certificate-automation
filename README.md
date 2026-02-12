@@ -1,15 +1,25 @@
-# Certificate Automation Web App
+# Document Automation Web App
 
-A web application that automates the generation of personalized certificates by overlaying participant names onto PDF certificate templates.
+A comprehensive web application for automating document creation, including personalized certificates and professional letterhead documents.
 
 ## Features
 
+### Certificate Generation
 - **PDF Template Upload**: Upload your certificate template as a PDF file
 - **Visual Position Marking**: Click and drag to mark exactly where names should appear
 - **Font Customization**: Choose font family, size, color, and alignment
-- **Flexible Name Input**: Add names manually or import from Excel files
+- **Flexible Name Input**: Add names manually or import from Excel files (with email addresses)
 - **Batch Generation**: Generate certificates for multiple participants at once
+- **Email Delivery**: Send certificates directly via email with custom templates
 - **ZIP Download**: Download all generated certificates in a single ZIP file
+
+### Letterhead Documents (NEW!)
+- **Template Support**: Upload PDF or DOCX letterhead templates
+- **Rich Text Editor**: Format content with bold, italic, underline, lists, tables, and images
+- **File Upload**: Upload DOCX files with pre-written content
+- **Flexible Output**: Generate documents as PDF or DOCX
+- **Auto Formatting**: Content automatically flows with letterhead template
+- See [LETTERHEAD_FEATURE.md](LETTERHEAD_FEATURE.md) for detailed documentation
 
 ## Tech Stack
 
@@ -20,13 +30,19 @@ A web application that automates the generation of personalized certificates by 
 - react-pdf for PDF preview
 - react-dropzone for file uploads
 - xlsx (SheetJS) for Excel parsing
+- Tiptap for rich text editing
+- Lucide React for icons
 
 ### Backend
 - Node.js 18+
 - Express.js
 - pdf-lib for PDF manipulation
+- docx for DOCX file creation and manipulation
+- mammoth for DOCX parsing
+- libreoffice-convert for format conversion
 - archiver for ZIP creation
 - multer for file uploads
+- nodemailer for email delivery
 
 ## Getting Started
 
@@ -63,12 +79,15 @@ This will start:
 
 ## Usage
 
-### Step 1: Upload Template
-1. Drag and drop your PDF certificate template
-2. Or click to browse and select a file
-3. Maximum file size: 10MB
+### Certificate Generation
 
-### Step 2: Mark Name Position
+#### Step 1: Upload Template
+1. Select "Certificates" tab in the navigation
+2. Drag and drop your PDF certificate template
+3. Or click to browse and select a file
+4. Maximum file size: 10MB
+
+#### Step 2: Mark Name Position
 1. Click on the PDF where you want names to appear
 2. Drag the blue rectangle to adjust position and size
 3. Customize font settings in the sidebar:
@@ -77,7 +96,7 @@ This will start:
    - Font color (hex color picker)
    - Text alignment (left, center, right)
 
-### Step 3: Add Participants
+#### Step 3: Add Participants
 **Manual Entry:**
 - Enter names separated by commas or new lines
 - Example: `John Doe, Jane Smith, Bob Wilson`
@@ -85,13 +104,42 @@ This will start:
 **Excel Upload:**
 - Upload .xlsx or .xls file
 - Names should be in Column A
-- First row is treated as header if it contains keywords like "name"
+- Email addresses in Column B (optional, required for email delivery)
+- First row is treated as header if it contains keywords like "name" or "email"
 
-### Step 4: Generate & Download
+#### Step 4: Generate & Deliver
+**Download Method:**
 1. Review the summary of template and participants
 2. Click "Generate Certificates"
 3. Wait for progress to complete
 4. Click "Download All Certificates (ZIP)"
+
+**Email Delivery Method:**
+1. Switch to "Email Delivery" tab
+2. Review participants with email addresses
+3. Customize email subject and body (supports template variables like `{name}`)
+4. Send test email (optional)
+5. Click "Send Emails" to deliver certificates to all participants
+6. Monitor sending progress and view delivery report
+
+### Letterhead Documents
+
+#### Step 1: Upload Letterhead Template
+1. Select "Letterhead" tab in the navigation
+2. Upload your letterhead (PDF or DOCX)
+3. Maximum file size: 10MB
+
+#### Step 2: Add Content
+Choose your input method:
+- **Text Editor**: Use rich formatting tools to write content
+- **Upload File**: Upload a DOCX file with your content
+
+#### Step 3: Generate & Download
+1. Select output format (PDF or DOCX)
+2. Wait for document generation
+3. Download your completed letterhead document
+
+For detailed letterhead feature documentation, see [LETTERHEAD_FEATURE.md](LETTERHEAD_FEATURE.md)
 
 ## Project Structure
 
@@ -136,6 +184,21 @@ certificate-automation/
 - `GET /api/certificates/session/:id/download` - Download ZIP file
 - `POST /api/certificates/preview` - Preview single certificate
 
+### Letterhead
+- `POST /api/letterhead/upload-template` - Upload letterhead template (PDF/DOCX)
+- `POST /api/letterhead/upload-content` - Upload content DOCX file
+- `POST /api/letterhead/generate` - Generate merged document
+- `GET /api/letterhead/:id` - Get document details
+- `GET /api/letterhead/:id/download` - Download generated document
+
+### Email
+- `POST /api/email/send` - Send bulk emails with certificates
+- `GET /api/email/session/:id/status` - Get email sending progress
+- `POST /api/email/test` - Send test email
+- `POST /api/email/templates/save` - Save custom email template
+- `GET /api/email/templates` - Get saved email templates
+- `GET /api/email/config/check` - Check email service configuration
+
 ## Development
 
 ### Running in Development Mode
@@ -164,7 +227,30 @@ UPLOAD_DIR=./uploads
 OUTPUT_DIR=./outputs
 MAX_FILE_SIZE=10485760
 CLEANUP_INTERVAL=86400000
+
+# Email Configuration (Optional - for email delivery feature)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=Your Name <your-email@gmail.com>
+EMAIL_SUBJECT_TEMPLATE=Your Certificate is Ready
+EMAIL_BODY_TEMPLATE=Dear {name},\n\nPlease find attached your certificate.\n\nBest regards
 ```
+
+### Email Setup (Gmail)
+
+To use email delivery with Gmail:
+
+1. Enable 2-Factor Authentication on your Google Account
+2. Generate an App Password:
+   - Go to Google Account Settings → Security
+   - Under "2-Step Verification", click "App passwords"
+   - Generate a new app password for "Mail"
+3. Use the generated password as `SMTP_PASS` in your `.env` file
+4. Set `SMTP_USER` to your Gmail address
+
+**Note:** The email feature is optional. If not configured, only the ZIP download option will be available.
 
 ## License
 

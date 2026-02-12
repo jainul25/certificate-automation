@@ -17,6 +17,12 @@ const initialState: AppState = {
   fontSettings: defaultFontSettings,
   participants: [],
   generationSession: null,
+  deliveryMethod: 'download',
+  emailConfig: {
+    subject: 'Your Certificate is Ready',
+    body: 'Dear {name},\n\nPlease find attached your certificate.\n\nBest regards',
+  },
+  emailSession: null,
 }
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -63,6 +69,24 @@ function appReducer(state: AppState, action: AppAction): AppState {
             },
           }
         : state
+    case 'SET_EMAIL_CONFIG':
+      return { ...state, emailConfig: action.payload }
+    case 'SET_EMAIL_SESSION':
+      return { ...state, emailSession: action.payload }
+    case 'UPDATE_EMAIL_PROGRESS':
+      return state.emailSession
+        ? {
+            ...state,
+            emailSession: {
+              ...state.emailSession,
+              progress: action.payload.progress,
+              sentCount: action.payload.sentCount,
+              failedCount: action.payload.failedCount,
+            },
+          }
+        : state
+    case 'SET_DELIVERY_METHOD':
+      return { ...state, deliveryMethod: action.payload }
     case 'RESET':
       return initialState
     default:

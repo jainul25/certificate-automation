@@ -74,3 +74,67 @@ export const uploadExcel = multer({
   },
 }).single('excel')
 
+// Storage configuration for letterhead templates
+const letterheadTemplateStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.resolve(__dirname, '../../uploads/letterheads/templates')
+    cb(null, uploadDir)
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `letterhead_${uuidv4()}${path.extname(file.originalname)}`
+    cb(null, uniqueName)
+  },
+})// Storage configuration for letterhead content files
+const letterheadContentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.resolve(__dirname, '../../uploads/letterheads/content')
+    cb(null, uploadDir)
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `content_${uuidv4()}${path.extname(file.originalname)}`
+    cb(null, uniqueName)
+  },
+})// File filter for letterhead templates (PDF or DOCX)
+const letterheadTemplateFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedMimes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  ]
+  const allowedExtensions = ['.pdf', '.docx']
+  const ext = path.extname(file.originalname).toLowerCase()  if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+    cb(null, true)
+  } else {
+    cb(createError('Only PDF or DOCX files are allowed', 400, 'INVALID_FILE_TYPE'))
+  }
+}
+
+// File filter for content files (DOCX only)
+const docxFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedMimes = [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  ]
+  const allowedExtensions = ['.docx']
+  const ext = path.extname(file.originalname).toLowerCase()
+
+  if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+    cb(null, true)
+  } else {
+    cb(createError('Only DOCX files are allowed', 400, 'INVALID_FILE_TYPE'))
+  }
+}
+
+export const uploadLetterheadTemplate = multer({
+  storage: letterheadTemplateStorage,
+  fileFilter: letterheadTemplateFilter,
+  limits: {
+    fileSize: MAX_FILE_SIZE,
+  },
+}).single('template')
+
+export const uploadLetterheadContent = multer({
+  storage: letterheadContentStorage,
+  fileFilter: docxFilter,
+  limits: {
+    fileSize: MAX_FILE_SIZE,
+  },
+}).single('content')

@@ -8,6 +8,7 @@ import { validateParticipantName, sanitizeName } from '../middleware/validation.
 interface ParsedParticipant {
   id: string
   name: string
+  email?: string
   status: 'pending' | 'error'
   errorMessage?: string
 }
@@ -91,7 +92,8 @@ export async function parseExcel(req: Request, res: Response, next: NextFunction
 
     for (let i = startIndex; i < jsonData.length; i++) {
       const row = jsonData[i]
-      const name = row?.[0] // First column
+      const name = row?.[0] // First column (Column A)
+      const email = row?.[1] // Second column (Column B)
 
       if (!name || typeof name !== 'string') {
         if (row && row.length > 0) {
@@ -114,6 +116,23 @@ export async function parseExcel(req: Request, res: Response, next: NextFunction
       const validation = validateParticipantName(trimmed)
       const sanitized = sanitizeName(trimmed)
 
+      // Parse and validate email if provided
+      let participantEmail: string | undefined
+      let emailError: string | undefined
+
+      if (email && typeof email === 'string') {
+        const trimmedEmail = String(email).trim()
+        if (trimmedEmail) {
+          participantEmail = trimmedEmail
+          // Basic email validation
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (!emailRegex.test(trimmedEmail)) {
+            emailError = 'Invalid email format'
+            errors.push(`Row ${i + 1}: Invalid email "${trimmedEmail}"`)
+          }
+        }
+      }
+
       if (!validation.valid) {
         errors.push(`Row ${i + 1}: ${validation.error}`)
       }
@@ -121,8 +140,9 @@ export async function parseExcel(req: Request, res: Response, next: NextFunction
       participants.push({
         id: uuidv4(),
         name: sanitized,
-        status: validation.valid ? 'pending' : 'error',
-        errorMessage: validation.error,
+        email: participantEmail,
+        status: validation.valid && !emailError ? 'pending' : 'error',
+        errorMessage: validation.error || emailError,
       })
     }
 
@@ -144,7 +164,13 @@ export async function parseExcel(req: Request, res: Response, next: NextFunction
 function isHeaderRow(row: any[]): boolean {
   if (!row || row.length === 0) return false
   const firstCell = String(row[0] || '').toLowerCase()
+  const secondCell = String(row[1] || '').toLowerCase()
   const headerKeywords = ['name', 'participant', 'student', 'attendee', 'person', 'full name']
-  return headerKeywords.some((keyword) => firstCell.includes(keyword))
+  const emailKeywords = ['email', 'e-mail', 'mail', 'address']
+  
+  const hasNameHeader = headerKeywords.some((keyword) => firstCell.includes(keyword))
+  const hasEmailHeader = emailKeywords.some((keyword) => secondCell.includes(keyword))
+  
+  return hasNameHeader || hasEmailHeader
 }
 

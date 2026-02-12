@@ -19,12 +19,22 @@ const PORT = process.env.PORT || 3001
 const uploadDir = path.resolve(__dirname, '..', process.env.UPLOAD_DIR || './uploads')
 const outputDir = path.resolve(__dirname, '..', process.env.OUTPUT_DIR || './outputs')
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
-}
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir, { recursive: true })
-}
+// Create necessary directories
+const directories = [
+  uploadDir,
+  outputDir,
+  path.join(uploadDir, 'templates'),
+  path.join(uploadDir, 'excel'),
+  path.join(uploadDir, 'letterheads', 'templates'),
+  path.join(uploadDir, 'letterheads', 'content'),
+  path.join(uploadDir, 'letterheads', 'generated'),
+]
+
+directories.forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+})
 
 // Middleware
 app.use(cors({

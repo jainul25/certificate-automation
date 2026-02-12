@@ -103,5 +103,121 @@ export const api = {
     }
     return response.blob()
   },
+
+  // Letterhead endpoints
+  async uploadLetterheadTemplate(file: File): Promise<{ templateId: string; filename: string; originalName: string; fileType: string; previewUrl: string }> {
+    const formData = new FormData()
+    formData.append('template', file)
+
+    const response = await fetch(`${API_BASE}/letterhead/upload-template`, {
+      method: 'POST',
+      body: formData,
+    })
+    return handleResponse(response)
+  },
+
+  async uploadLetterheadContent(file: File): Promise<{ contentId: string; filename: string; originalName: string; filePath: string }> {
+    const formData = new FormData()
+    formData.append('content', file)
+
+    const response = await fetch(`${API_BASE}/letterhead/upload-content`, {
+      method: 'POST',
+      body: formData,
+    })
+    return handleResponse(response)
+  },
+
+  async generateLetterhead(
+    templateId: string,
+    contentSource: 'editor' | 'upload',
+    contentHtml?: string,
+    contentFilePath?: string,
+    outputFormat?: 'pdf' | 'docx'
+  ): Promise<{ sessionId: string; status: string }> {
+    const response = await fetch(`${API_BASE}/letterhead/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        templateId,
+        contentSource,
+        contentHtml,
+        contentFilePath,
+        outputFormat: outputFormat || 'pdf',
+      }),
+    })
+    return handleResponse(response)
+  },
+
+  async getLetterheadDocument(documentId: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/letterhead/${documentId}`)
+    return handleResponse(response)
+  },
+
+  getLetterheadDownloadUrl(documentId: string): string {
+    return `${API_BASE}/letterhead/${documentId}/download`
+  },
+
+  // Email endpoints
+  async sendBulkEmails(
+    templateId: string,
+    participants: { id: string; name: string; email: string }[],
+    emailConfig: { subject: string; body: string }
+  ): Promise<{ sessionId: string; status: string; totalCount: number; validCount: number }> {
+    const response = await fetch(`${API_BASE}/email/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ templateId, participants, emailConfig }),
+    })
+    return handleResponse(response)
+  },
+
+  async getEmailSessionStatus(
+    sessionId: string
+  ): Promise<{
+    status: string
+    progress: number
+    sentCount: number
+    failedCount: number
+    totalCount: number
+    participants: any[]
+  }> {
+    const response = await fetch(`${API_BASE}/email/session/${sessionId}/status`)
+    return handleResponse(response)
+  },
+
+  async sendTestEmail(
+    email: string,
+    emailConfig: { subject: string; body: string }
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_BASE}/email/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, emailConfig }),
+    })
+    return handleResponse(response)
+  },
+
+  async saveEmailTemplate(
+    name: string,
+    subject: string,
+    body: string
+  ): Promise<{ success: boolean; template: any }> {
+    const response = await fetch(`${API_BASE}/email/templates/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, subject, body }),
+    })
+    return handleResponse(response)
+  },
+
+  async getEmailTemplates(): Promise<{ templates: any[] }> {
+    const response = await fetch(`${API_BASE}/email/templates`)
+    return handleResponse(response)
+  },
+
+  async checkEmailConfig(): Promise<{ configured: boolean; connected: boolean; message: string }> {
+    const response = await fetch(`${API_BASE}/email/config/check`)
+    return handleResponse(response)
+  },
 }
 
