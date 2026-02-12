@@ -80,7 +80,7 @@ export const api = {
 
   async getSessionStatus(
     sessionId: string
-  ): Promise<{ status: string; progress: number; completedCount: number; totalCount: number }> {
+  ): Promise<{ status: string; progress: number; completedCount: number; totalCount: number; errorCount: number }> {
     const response = await fetch(`${API_BASE}/certificates/session/${sessionId}/status`)
     return handleResponse(response)
   },
