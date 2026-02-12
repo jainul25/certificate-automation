@@ -16,8 +16,14 @@ const app = express()
 const PORT = process.env.PORT || 3001
 
 // Create upload and output directories
-const uploadDir = path.resolve(__dirname, '..', process.env.UPLOAD_DIR || './uploads')
-const outputDir = path.resolve(__dirname, '..', process.env.OUTPUT_DIR || './outputs')
+// Use /tmp on Vercel (read-only filesystem except /tmp)
+const isVercel = !!process.env.VERCEL
+const uploadDir = isVercel
+  ? path.join('/tmp', 'uploads')
+  : path.resolve(__dirname, '..', process.env.UPLOAD_DIR || './uploads')
+const outputDir = isVercel
+  ? path.join('/tmp', 'outputs')
+  : path.resolve(__dirname, '..', process.env.OUTPUT_DIR || './outputs')
 
 // Create necessary directories
 const directories = [
@@ -38,7 +44,9 @@ directories.forEach((dir) => {
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? false : 'http://localhost:5173',
+  origin: process.env.VERCEL
+    ? true  // Allow same-origin on Vercel
+    : process.env.NODE_ENV === 'production' ? false : 'http://localhost:5173',
   credentials: true,
 }))
 app.use(express.json())
@@ -59,12 +67,14 @@ app.get('/health', (req, res) => {
 // Error handling
 app.use(errorHandler)
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`)
-  console.log(`📁 Upload directory: ${uploadDir}`)
-  console.log(`📁 Output directory: ${outputDir}`)
-})
+// Start server (only when running locally, not on Vercel)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`)
+    console.log(`📁 Upload directory: ${uploadDir}`)
+    console.log(`📁 Output directory: ${outputDir}`)
+  })
+}
 
 export default app
 

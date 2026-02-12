@@ -27,6 +27,12 @@ uploads/
 outputs/
 *.tmp
 
+# TypeScript build info
+*.tsbuildinfo
+
+# Vercel
+.vercel
+
 # Test coverage
 coverage/
 
