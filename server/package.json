@@ -9,6 +9,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "docx": "^8.5.0",

@@ -1,4 +1,5 @@
 import nodemailer, { Transporter } from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -23,19 +24,31 @@ interface EmailResult {
 class EmailService {
   private transporter: Transporter | null = null;
   private isConfigured: boolean = false;
+  private provider: 'sendgrid' | 'smtp' | null = null;
 
   constructor() {
     this.initialize();
   }
 
   private initialize() {
+    // Prefer SendGrid (HTTP-based, works on Railway)
+    const sendgridApiKey = process.env.SENDGRID_API_KEY;
+    if (sendgridApiKey) {
+      sgMail.setApiKey(sendgridApiKey);
+      this.isConfigured = true;
+      this.provider = 'sendgrid';
+      console.log('Email service initialized with SendGrid');
+      return;
+    }
+
+    // Fallback to SMTP
     const smtpHost = process.env.SMTP_HOST;
     const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;
 
     if (!smtpHost || !smtpUser || !smtpPass) {
-      console.warn('Email service is not configured. Please set SMTP environment variables.');
+      console.warn('Email service is not configured. Please set SENDGRID_API_KEY or SMTP environment variables.');
       this.isConfigured = false;
       return;
     }
@@ -44,18 +57,15 @@ class EmailService {
       this.transporter = nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
-        secure: smtpPort === 465, // SSL for 465, STARTTLS for 587
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPass },
         connectionTimeout: 15000,
         greetingTimeout: 15000,
         socketTimeout: 20000,
       });
-
       this.isConfigured = true;
-      console.log(`Email service initialized (${smtpHost}:${smtpPort})`);
+      this.provider = 'smtp';
+      console.log(`Email service initialized with SMTP (${smtpHost}:${smtpPort})`);
     } catch (error) {
       console.error('Failed to initialize email service:', error);
       this.isConfigured = false;
@@ -63,7 +73,7 @@ class EmailService {
   }
 
   public isReady(): boolean {
-    return this.isConfigured && this.transporter !== null;
+    return this.isConfigured;
   }
 
   public async verifyConnection(): Promise<boolean> {
@@ -102,29 +112,62 @@ class EmailService {
     }
 
     try {
-      const mailOptions: any = {
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: options.to,
-        subject: options.subject,
-        text: options.body,
-        html: options.body.replace(/\n/g, '<br>'),
-      };
-
-      if (options.attachmentPath) {
-        const exists = await fs.access(options.attachmentPath).then(() => true).catch(() => false);
-        if (!exists) return { success: false, error: 'Attachment file not found' };
-        mailOptions.attachments = [{
-          filename: options.attachmentName || path.basename(options.attachmentPath),
-          path: options.attachmentPath,
-        }];
+      if (this.provider === 'sendgrid') {
+        return await this.sendViaSendGrid(options);
       }
-
-      await this.transporter!.sendMail(mailOptions);
-      return { success: true };
+      return await this.sendViaSMTP(options);
     } catch (error: any) {
       console.error('Failed to send email:', error);
       return { success: false, error: error.message || 'Failed to send email' };
     }
+  }
+
+  private async sendViaSendGrid(options: SendEmailOptions): Promise<EmailResult> {
+    const from = process.env.SMTP_FROM || process.env.SMTP_USER || '';
+    const msg: any = {
+      to: options.to,
+      from,
+      subject: options.subject,
+      text: options.body,
+      html: options.body.replace(/\n/g, '<br>'),
+    };
+
+    if (options.attachmentPath) {
+      const exists = await fs.access(options.attachmentPath).then(() => true).catch(() => false);
+      if (!exists) return { success: false, error: 'Attachment file not found' };
+      const content = await fs.readFile(options.attachmentPath);
+      msg.attachments = [{
+        content: content.toString('base64'),
+        filename: options.attachmentName || path.basename(options.attachmentPath),
+        type: 'application/pdf',
+        disposition: 'attachment',
+      }];
+    }
+
+    await sgMail.send(msg);
+    return { success: true };
+  }
+
+  private async sendViaSMTP(options: SendEmailOptions): Promise<EmailResult> {
+    const mailOptions: any = {
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: options.to,
+      subject: options.subject,
+      text: options.body,
+      html: options.body.replace(/\n/g, '<br>'),
+    };
+
+    if (options.attachmentPath) {
+      const exists = await fs.access(options.attachmentPath).then(() => true).catch(() => false);
+      if (!exists) return { success: false, error: 'Attachment file not found' };
+      mailOptions.attachments = [{
+        filename: options.attachmentName || path.basename(options.attachmentPath),
+        path: options.attachmentPath,
+      }];
+    }
+
+    await this.transporter!.sendMail(mailOptions);
+    return { success: true };
   }
 
   public async sendCertificateEmail(
