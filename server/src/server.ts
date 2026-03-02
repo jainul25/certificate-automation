@@ -77,6 +77,17 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// Debug: check which SMTP env vars are present (values hidden)
+app.get('/debug/env', (req, res) => {
+  res.json({
+    SMTP_HOST: !!process.env.SMTP_HOST ? process.env.SMTP_HOST : 'NOT SET',
+    SMTP_PORT: !!process.env.SMTP_PORT ? process.env.SMTP_PORT : 'NOT SET',
+    SMTP_USER: !!process.env.SMTP_USER ? process.env.SMTP_USER : 'NOT SET',
+    SMTP_PASS: !!process.env.SMTP_PASS ? '***SET***' : 'NOT SET',
+    SMTP_FROM: !!process.env.SMTP_FROM ? process.env.SMTP_FROM : 'NOT SET',
+  })
+})
+
 // Error handling
 app.use(errorHandler)
 
