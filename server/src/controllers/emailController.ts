@@ -85,14 +85,6 @@ export async function sendBulkEmails(
       );
     }
 
-    // Verify SMTP connection
-    const isConnected = await emailService.verifyConnection();
-    if (!isConnected) {
-      return next(
-        createError('Failed to connect to email server', 503, 'EMAIL_CONNECTION_FAILED')
-      );
-    }
-
     // Get template
     const template = getTemplateById(templateId);
     if (!template) {
