@@ -43,9 +43,13 @@ directories.forEach((dir) => {
 })
 
 // Middleware
+const defaultOrigins = [
+  'http://localhost:5173',
+  'https://certificate-automation-client.vercel.app',
+]
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-  : ['http://localhost:5173']
+  : defaultOrigins
 
 app.use(cors({
   origin: (origin, callback) => {
