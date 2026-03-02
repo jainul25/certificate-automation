@@ -50,6 +50,9 @@ class EmailService {
           user: smtpUser,
           pass: smtpPass,
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
 
       this.isConfigured = true;
@@ -76,7 +79,10 @@ class EmailService {
     }
 
     try {
-      await this.transporter.verify();
+      const timeoutPromise = new Promise<boolean>((_, reject) =>
+        setTimeout(() => reject(new Error('SMTP verification timed out')), 10000)
+      );
+      await Promise.race([this.transporter.verify(), timeoutPromise]);
       return true;
     } catch (error) {
       console.error('SMTP verification failed:', error);
