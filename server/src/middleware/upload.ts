@@ -84,7 +84,9 @@ const letterheadTemplateStorage = multer.diskStorage({
     const uniqueName = `letterhead_${uuidv4()}${path.extname(file.originalname)}`
     cb(null, uniqueName)
   },
-})// Storage configuration for letterhead content files
+})
+
+// Storage configuration for letterhead content files
 const letterheadContentStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.resolve(__dirname, '../../uploads/letterheads/content')
@@ -94,14 +96,18 @@ const letterheadContentStorage = multer.diskStorage({
     const uniqueName = `content_${uuidv4()}${path.extname(file.originalname)}`
     cb(null, uniqueName)
   },
-})// File filter for letterhead templates (PDF or DOCX)
+})
+
+// File filter for letterhead templates (PDF or DOCX)
 const letterheadTemplateFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedMimes = [
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
   ]
   const allowedExtensions = ['.pdf', '.docx']
-  const ext = path.extname(file.originalname).toLowerCase()  if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+  const ext = path.extname(file.originalname).toLowerCase()
+
+  if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
     cb(null, true)
   } else {
     cb(createError('Only PDF or DOCX files are allowed', 400, 'INVALID_FILE_TYPE'))
