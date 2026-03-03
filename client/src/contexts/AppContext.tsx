@@ -56,6 +56,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         participants: state.participants.filter((p) => p.id !== action.payload),
       }
+    case 'UPDATE_PARTICIPANT_EMAIL':
+      return {
+        ...state,
+        participants: state.participants.map((p) =>
+          p.id === action.payload.id ? { ...p, email: action.payload.email } : p
+        ),
+      }
     case 'SET_GENERATION_SESSION':
       return { ...state, generationSession: action.payload }
     case 'UPDATE_SESSION_PROGRESS':

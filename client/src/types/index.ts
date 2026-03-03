@@ -68,6 +68,7 @@ export type AppAction =
   | { type: 'SET_PARTICIPANTS'; payload: Participant[] }
   | { type: 'ADD_PARTICIPANTS'; payload: Participant[] }
   | { type: 'REMOVE_PARTICIPANT'; payload: string }
+  | { type: 'UPDATE_PARTICIPANT_EMAIL'; payload: { id: string; email: string } }
   | { type: 'SET_GENERATION_SESSION'; payload: GenerationSession }
   | { type: 'UPDATE_SESSION_PROGRESS'; payload: { progress: number; status: GenerationSession['status'] } }
   | { type: 'SET_EMAIL_CONFIG'; payload: EmailConfig }
