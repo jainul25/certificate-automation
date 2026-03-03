@@ -74,7 +74,12 @@ app.use('/api', routes)
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    emailProvider: process.env.SENDGRID_API_KEY ? 'sendgrid' : 'smtp',
+    hasSendGridKey: !!process.env.SENDGRID_API_KEY,
+  })
 })
 
 // Error handling
