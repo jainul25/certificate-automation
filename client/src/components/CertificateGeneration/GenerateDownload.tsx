@@ -31,11 +31,12 @@ export default function GenerateDownload() {
   const [errorCount, setErrorCount] = useState(0)
   const [emailConfigured, setEmailConfigured] = useState(false)
   const [checkingEmail, setCheckingEmail] = useState(true)
+  const [sendingStatus, setSendingStatus] = useState<string | null>(null)
 
   const validParticipants = state.participants.filter((p) => p.status !== 'error')
   const participantsWithEmail = validParticipants.filter((p) => p.email)
 
-  // Check email configuration on mount
+  // Check email configuration on mount + keep-alive ping every 10 min
   useEffect(() => {
     const checkEmail = async () => {
       try {
@@ -49,6 +50,13 @@ export default function GenerateDownload() {
       }
     }
     checkEmail()
+
+    // Ping server every 10 minutes to prevent Render free-tier spin-down
+    const keepAlive = setInterval(() => {
+      fetch(`${import.meta.env.VITE_API_URL || ''}/health`).catch(() => {})
+    }, 10 * 60 * 1000)
+
+    return () => clearInterval(keepAlive)
   }, [])
 
   const pollStatus = useCallback(async (sid: string) => {
@@ -119,6 +127,12 @@ export default function GenerateDownload() {
 
     setIsGenerating(true)
     setError(null)
+    setSendingStatus('Connecting to server...')
+
+    // Show "waking up" message if the server takes more than 3 seconds
+    const slowTimer = setTimeout(() => {
+      setSendingStatus('Waking up server, please wait...')
+    }, 3000)
 
     try {
       const response = await api.sendBulkEmails(
@@ -127,9 +141,13 @@ export default function GenerateDownload() {
         state.emailConfig
       )
 
+      clearTimeout(slowTimer)
+      setSendingStatus(null)
       setEmailSessionId(response.sessionId)
       showToast(`Sending emails to ${response.validCount} participants...`, 'success')
     } catch (err) {
+      clearTimeout(slowTimer)
+      setSendingStatus(null)
       const errorMsg = err instanceof Error ? err.message : 'Failed to send emails'
       setError(errorMsg)
       showToast(errorMsg, 'error')
@@ -442,7 +460,7 @@ export default function GenerateDownload() {
                   {isGenerating ? (
                     <>
                       <Loader2 className="w-6 h-6 animate-spin" />
-                      Preparing to send...
+                      {sendingStatus || 'Preparing to send...'}
                     </>
                   ) : (
                     <>
