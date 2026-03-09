@@ -33,7 +33,6 @@ class EmailService {
     // Prefer SendGrid (HTTP-based, works on Railway)
     const sendgridApiKey = process.env.SENDGRID_API_KEY;
     if (sendgridApiKey) {
-      sgMail.setApiKey(sendgridApiKey);
       this.isConfigured = true;
       this.provider = 'sendgrid';
       console.log('Email service initialized with SendGrid');
